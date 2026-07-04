@@ -12,9 +12,16 @@
         h2 { color: #2e7d32; text-align: center; margin-bottom: 5px; }
         p.subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 25px; }
         
-        .upload-section { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
+        /* मोबाईलवर कार्ड्स एकाखाली एक दिसण्यासाठी flex-direction: column केले आहे */
+        .upload-section { display: flex; flex-direction: column; gap: 20px; margin-bottom: 20px; }
+        
+        /* लॅपटॉप/टॅबलेट वर कार्ड्स शेजारी-शेजारी दिसण्यासाठी */
+        @media (min-width: 600px) {
+            .upload-section { flex-direction: row; }
+        }
+
         /* Label टॅगचा वापर केल्यामुळे फाईल निवडताना अडचण येणार नाही */
-        .upload-card { display: block; flex: 1; min-width: 300px; border: 2px dashed; padding: 20px; text-align: center; border-radius: 6px; cursor: pointer; transition: 0.3s; }
+        .upload-card { display: block; flex: 1; width: 100%; border: 2px dashed; padding: 20px; text-align: center; border-radius: 6px; cursor: pointer; transition: 0.3s; }
         
         .retailer-card { border-color: #2e7d32; background-color: #f1f8e9; }
         .wholesaler-card { border-color: #1565c0; background-color: #e3f2fd; }
@@ -27,11 +34,10 @@
         .file-status { margin-top: 10px; font-size: 14px; font-weight: bold; color: #d32f2f; }
         .status-ok { color: #2e7d32; }
 
-        .btn-container { display: flex; gap: 15px; margin-top: 25px; }
+        .btn-container { display: flex; margin-top: 25px; }
         button { flex: 1; padding: 15px; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; }
         .btn-submit { background: linear-gradient(135deg, #2e7d32 0%, #1565c0 100%); color: white; }
         .btn-submit:disabled { background: #cccccc; cursor: not-allowed; }
-        .btn-back { background-color: #757575; color: white; text-align: center; text-decoration: none; padding: 15px; border-radius: 5px; font-weight: bold; flex: 1; display: block; }
         
         .message { margin-top: 15px; text-align: center; font-size: 15px; font-weight: bold; white-space: pre-line; }
         .error-msg { color: #d32f2f; }
@@ -61,7 +67,6 @@
     </div>
     
     <div class="btn-container">
-        <a href="../dashboard.html" class="btn-back">मागे जा</a>
         <button id="uploadBtn" class="btn-submit" disabled>दोन्ही फाईल्स अपलोड करा</button>
     </div>
     
