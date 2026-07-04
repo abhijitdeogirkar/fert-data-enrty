@@ -2,25 +2,27 @@
 <html lang="mr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MahaKhat - एकत्रित खत साठा अपलोड</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2e7d32">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
         body { background-color: #f4f7f6; color: #333; padding: 20px; }
-        .form-container { background-color: white; max-width: 800px; margin: 30px auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 5px solid #2e7d32; }
+        .form-container { background-color: white; max-width: 800px; margin: 20px auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 5px solid #2e7d32; }
         h2 { color: #2e7d32; text-align: center; margin-bottom: 5px; }
         p.subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 25px; }
         
-        /* मोबाईलवर कार्ड्स एकाखाली एक दिसण्यासाठी flex-direction: column केले आहे */
+        /* मोबाईलवर कार्ड्स एकाखाली एक दिसतील आणि लॅपटॉपवर शेजारी-शेजारी */
         .upload-section { display: flex; flex-direction: column; gap: 20px; margin-bottom: 20px; }
-        
-        /* लॅपटॉप/टॅबलेट वर कार्ड्स शेजारी-शेजारी दिसण्यासाठी */
-        @media (min-width: 600px) {
-            .upload-section { flex-direction: row; }
-        }
+        @media (min-width: 600px) { .upload-section { flex-direction: row; } }
 
-        /* Label टॅगचा वापर केल्यामुळे फाईल निवडताना अडचण येणार नाही */
+        /* फाईल निवडण्यासाठी Label टॅग */
         .upload-card { display: block; flex: 1; width: 100%; border: 2px dashed; padding: 20px; text-align: center; border-radius: 6px; cursor: pointer; transition: 0.3s; }
         
         .retailer-card { border-color: #2e7d32; background-color: #f1f8e9; }
@@ -80,7 +82,6 @@
     let parsedRetailerRows = null;
     let parsedWholesalerRows = null;
 
-    // पेज लोड झाल्यानंतरच फाईल्स निवडता येतील
     document.addEventListener('DOMContentLoaded', function() {
         
         const retailerInput = document.getElementById('retailerFile');
@@ -246,6 +247,20 @@
             });
         });
     });
+</script>
+
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(registration => {
+                    console.log('ServiceWorker registration successful');
+                })
+                .catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+        });
+    }
 </script>
 
 </body>
