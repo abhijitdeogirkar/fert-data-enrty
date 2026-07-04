@@ -1,5 +1,5 @@
 // 🔴 महत्त्वाची सूचना: येथे तुमची चालू असलेली (सध्याची) Google Apps Script ची URL पेस्ट करा 🔴
-const SCRIPT_URL = "येथे_तुमची_वेब_ॲप_URL_पेस्ट_करा"; 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby0jkH1Cbmhq1QEFC04ekzTazjMJlG5FPQ9UPa4QRQj_vlrX26bBqm3Zvze8NrHFu5k/exec"; 
 
 let parsedRetailerRows = null;
 let parsedWholesalerRows = null;
