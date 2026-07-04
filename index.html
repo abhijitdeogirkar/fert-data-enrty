@@ -13,7 +13,8 @@
         p.subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 25px; }
         
         .upload-section { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
-        .upload-card { flex: 1; min-width: 300px; border: 2px dashed; padding: 20px; text-align: center; border-radius: 6px; cursor: pointer; transition: 0.3s; }
+        /* Label टॅगचा वापर केल्यामुळे फाईल निवडताना अडचण येणार नाही */
+        .upload-card { display: block; flex: 1; min-width: 300px; border: 2px dashed; padding: 20px; text-align: center; border-radius: 6px; cursor: pointer; transition: 0.3s; }
         
         .retailer-card { border-color: #2e7d32; background-color: #f1f8e9; }
         .wholesaler-card { border-color: #1565c0; background-color: #e3f2fd; }
@@ -30,7 +31,7 @@
         button { flex: 1; padding: 15px; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; }
         .btn-submit { background: linear-gradient(135deg, #2e7d32 0%, #1565c0 100%); color: white; }
         .btn-submit:disabled { background: #cccccc; cursor: not-allowed; }
-        .btn-back { background-color: #757575; color: white; text-align: center; text-decoration: none; padding: 15px; border-radius: 5px; font-weight: bold; flex: 1; }
+        .btn-back { background-color: #757575; color: white; text-align: center; text-decoration: none; padding: 15px; border-radius: 5px; font-weight: bold; flex: 1; display: block; }
         
         .message { margin-top: 15px; text-align: center; font-size: 15px; font-weight: bold; white-space: pre-line; }
         .error-msg { color: #d32f2f; }
@@ -44,19 +45,19 @@
     <p class="subtitle">रिटेलर आणि होलसेलर दोन्ही फाईल्स एकाच वेळी अपलोड करणे अनिवार्य आहे.</p>
     
     <div class="upload-section">
-        <div class="upload-card retailer-card" onclick="document.getElementById('retailerFile').click()">
+        <label class="upload-card retailer-card" for="retailerFile">
             <h3>🟢 रिटेलर फाईल</h3>
             <p>येथे क्लिक करून .csv/.xlsx निवडा</p>
             <input type="file" id="retailerFile" accept=".xlsx, .xls, .csv">
             <div id="retailerStatus" class="file-status">फाईल निवडलेली नाही</div>
-        </div>
+        </label>
 
-        <div class="upload-card wholesaler-card" onclick="document.getElementById('wholesalerFile').click()">
+        <label class="upload-card wholesaler-card" for="wholesalerFile">
             <h3>🔵 होलसेलर फाईल</h3>
             <p>येथे क्लिक करून .csv/.xlsx निवडा</p>
             <input type="file" id="wholesalerFile" accept=".xlsx, .xls, .csv">
             <div id="wholesalerStatus" class="file-status">फाईल निवडलेली नाही</div>
-        </div>
+        </label>
     </div>
     
     <div class="btn-container">
@@ -68,172 +69,176 @@
 </div>
 
 <script>
-    // येथे तुम्ही नवीन तयार केलेल्या गुगल ॲप्स स्क्रिप्टची वेब ॲप URL टाका
+    // तुमची अचूक वेब ॲप URL
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby0jkH1Cbmhq1QEFC04ekzTazjMJlG5FPQ9UPa4QRQj_vlrX26bBqm3Zvze8NrHFu5k/exec"; 
     
     let parsedRetailerRows = null;
     let parsedWholesalerRows = null;
 
-    // फाईल प्रोसेस करणारे फंक्शन
-    function processExcelFile(file, type, statusElem) {
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            try {
-                let workbook;
-                if (file.name.toLowerCase().endsWith('.csv')) {
-                    const textData = new TextDecoder("utf-8").decode(evt.target.result);
-                    workbook = XLSX.read(textData, { type: 'string' });
-                } else {
-                    const data = new Uint8Array(evt.target.result);
-                    workbook = XLSX.read(data, { type: 'array' });
-                }
+    // पेज लोड झाल्यानंतरच फाईल्स निवडता येतील
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        const retailerInput = document.getElementById('retailerFile');
+        const wholesalerInput = document.getElementById('wholesalerFile');
+        const uploadBtn = document.getElementById('uploadBtn');
 
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                
-                let firstRowText = (rawData[0] || []).join(" ").toLowerCase();
-                
-                // १. फाईलचे प्रकार तपासा
-                if (type === 'retailer' && !firstRowText.includes("retailer")) {
-                    statusElem.textContent = "❌ ही रिटेलरची फाईल नाही!";
-                    statusElem.className = "file-status";
-                    parsedRetailerRows = null;
-                    checkBothFiles();
-                    return;
-                }
-                if (type === 'wholesaler' && !firstRowText.includes("wholesaler")) {
-                    statusElem.textContent = "❌ ही होलसेलरची फाईल नाही!";
-                    statusElem.className = "file-status";
-                    parsedWholesalerRows = null;
-                    checkBothFiles();
-                    return;
-                }
-
-                // २. हेडर रो शोधा
-                let headerRowIndex = -1;
-                let searchKeyword = type === 'retailer' ? "district" : "district name";
-                
-                for(let i = 0; i < rawData.length; i++){
-                    if(!rawData[i]) continue;
-                    if(rawData[i].join(" ").toLowerCase().includes(searchKeyword)) {
-                        headerRowIndex = i;
-                        break;
+        function processExcelFile(file, type, statusElem) {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    let workbook;
+                    if (file.name.toLowerCase().endsWith('.csv')) {
+                        const textData = new TextDecoder("utf-8").decode(evt.target.result);
+                        workbook = XLSX.read(textData, { type: 'string' });
+                    } else {
+                        const data = new Uint8Array(evt.target.result);
+                        workbook = XLSX.read(data, { type: 'array' });
                     }
-                }
 
-                if(headerRowIndex === -1) {
-                    statusElem.textContent = "❌ योग्य कॉलम (District) सापडला नाही!";
-                    statusElem.className = "file-status";
-                    if(type==='retailer') parsedRetailerRows = null; else parsedWholesalerRows = null;
-                    checkBothFiles();
-                    return;
-                }
-
-                // ३. डेटा JSON मध्ये रूपांतरित करा
-                const headers = rawData[headerRowIndex].map(h => String(h || "").trim());
-                const jsonRows = [];
-                
-                for(let i = headerRowIndex + 1; i < rawData.length; i++){
-                    let row = rawData[i];
-                    if(row.length === 0 || !row.join("").trim()) continue; 
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                     
-                    let obj = {};
-                    for(let j = 0; j < headers.length; j++){
-                        if(headers[j]) obj[headers[j]] = row[j] !== undefined ? row[j] : "";
+                    let firstRowText = (rawData[0] || []).join(" ").toLowerCase();
+                    
+                    if (type === 'retailer' && !firstRowText.includes("retailer")) {
+                        statusElem.textContent = "❌ ही रिटेलरची फाईल नाही!";
+                        statusElem.className = "file-status error-msg";
+                        parsedRetailerRows = null;
+                        checkBothFiles();
+                        return;
                     }
-                    // जिल्हा रिकामा नसल्यासच घ्या
-                    let distValue = obj['District'] || obj['District Name'];
-                    if(distValue && String(distValue).trim() !== "") {
-                        jsonRows.push(obj);
+                    if (type === 'wholesaler' && !firstRowText.includes("wholesaler")) {
+                        statusElem.textContent = "❌ ही होलसेलरची फाईल नाही!";
+                        statusElem.className = "file-status error-msg";
+                        parsedWholesalerRows = null;
+                        checkBothFiles();
+                        return;
                     }
+
+                    let headerRowIndex = -1;
+                    let searchKeyword = type === 'retailer' ? "district" : "district name";
+                    
+                    for(let i = 0; i < rawData.length; i++){
+                        if(!rawData[i]) continue;
+                        if(rawData[i].join(" ").toLowerCase().includes(searchKeyword)) {
+                            headerRowIndex = i;
+                            break;
+                        }
+                    }
+
+                    if(headerRowIndex === -1) {
+                        statusElem.textContent = "❌ योग्य कॉलम सापडला नाही!";
+                        statusElem.className = "file-status error-msg";
+                        if(type==='retailer') parsedRetailerRows = null; else parsedWholesalerRows = null;
+                        checkBothFiles();
+                        return;
+                    }
+
+                    const headers = rawData[headerRowIndex].map(h => String(h || "").trim());
+                    const jsonRows = [];
+                    
+                    for(let i = headerRowIndex + 1; i < rawData.length; i++){
+                        let row = rawData[i];
+                        if(row.length === 0 || !row.join("").trim()) continue; 
+                        
+                        let obj = {};
+                        for(let j = 0; j < headers.length; j++){
+                            if(headers[j]) obj[headers[j]] = row[j] !== undefined ? row[j] : "";
+                        }
+                        let distValue = obj['District'] || obj['District Name'];
+                        if(distValue && String(distValue).trim() !== "") {
+                            jsonRows.push(obj);
+                        }
+                    }
+
+                    if(jsonRows.length === 0) {
+                        statusElem.textContent = "❌ फाईलमध्ये डेटा नाही.";
+                        statusElem.className = "file-status error-msg";
+                        if(type==='retailer') parsedRetailerRows = null; else parsedWholesalerRows = null;
+                    } else {
+                        statusElem.textContent = `✅ तयार! (${jsonRows.length} रेकॉर्ड्स)`;
+                        statusElem.className = "file-status status-ok";
+                        if(type==='retailer') parsedRetailerRows = jsonRows; else parsedWholesalerRows = jsonRows;
+                    }
+                    
+                    checkBothFiles();
+
+                } catch (error) {
+                    statusElem.textContent = "❌ फाईल वाचण्यात त्रुटी!";
+                    statusElem.className = "file-status error-msg";
                 }
-
-                if(jsonRows.length === 0) {
-                    statusElem.textContent = "❌ फाईलमध्ये डेटा नाही.";
-                    statusElem.className = "file-status";
-                    if(type==='retailer') parsedRetailerRows = null; else parsedWholesalerRows = null;
-                } else {
-                    statusElem.textContent = `✅ तयार! (${jsonRows.length} रेकॉर्ड्स)`;
-                    statusElem.className = "file-status status-ok";
-                    if(type==='retailer') parsedRetailerRows = jsonRows; else parsedWholesalerRows = jsonRows;
-                }
-                
-                checkBothFiles(); // दोन्ही फाईल्स आल्यात का चेक करा
-
-            } catch (error) {
-                statusElem.textContent = "❌ फाईल वाचण्यात त्रुटी!";
-                statusElem.className = "file-status";
-            }
-        };
-        reader.readAsArrayBuffer(file);
-    }
-
-    // दोन्ही फाईल्स तयार आहेत की नाही हे तपासणे
-    function checkBothFiles() {
-        const uploadBtn = document.getElementById('uploadBtn');
-        if (parsedRetailerRows && parsedWholesalerRows) {
-            uploadBtn.disabled = false;
-            document.getElementById('msgWindow').textContent = "दोन्ही फाईल्स यशस्वीरित्या वाचल्या. आता डेटा अपलोड करा.";
-            document.getElementById('msgWindow').className = "message success-msg";
-        } else {
-            uploadBtn.disabled = true;
+            };
+            reader.readAsArrayBuffer(file);
         }
-    }
 
-    // फाईल इनपुट इव्हेंट्स
-    document.getElementById('retailerFile').addEventListener('change', function(e) {
-        if(e.target.files[0]) processExcelFile(e.target.files[0], 'retailer', document.getElementById('retailerStatus'));
-    });
-
-    document.getElementById('wholesalerFile').addEventListener('change', function(e) {
-        if(e.target.files[0]) processExcelFile(e.target.files[0], 'wholesaler', document.getElementById('wholesalerStatus'));
-    });
-
-    // फायनल सबमिट बटन
-    document.getElementById('uploadBtn').addEventListener('click', function() {
-        if (!parsedRetailerRows || !parsedWholesalerRows) return;
-
-        const msgWin = document.getElementById('msgWindow');
-        const uploadBtn = document.getElementById('uploadBtn');
-
-        msgWin.className = "message success-msg";
-        msgWin.textContent = "प्रक्रिया सुरू आहे... जुना डेटा हटवून नवीन डेटा एकाच वेळी जोडला जात आहे. कृपया थांबा...";
-        uploadBtn.disabled = true;
-
-        const payload = {
-            action: 'uploadAllStock',
-            retailerRows: parsedRetailerRows,
-            wholesalerRows: parsedWholesalerRows
-        };
-
-        fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        })
-        .then(response => response.json()) 
-        .then(data => {
-            if (data.success) {
-                msgWin.className = "message success-msg";
-                msgWin.textContent = "✅ " + data.message;
-                // यशस्वी झाल्यावर सर्व रिसेट करणे
-                parsedRetailerRows = null;
-                parsedWholesalerRows = null;
-                document.getElementById('retailerFile').value = "";
-                document.getElementById('wholesalerFile').value = "";
-                document.getElementById('retailerStatus').textContent = "फाईल निवडलेली नाही";
-                document.getElementById('retailerStatus').className = "file-status";
-                document.getElementById('wholesalerStatus').textContent = "फाईल निवडलेली नाही";
-                document.getElementById('wholesalerStatus').className = "file-status";
-            } else {
-                msgWin.className = "message error-msg";
-                msgWin.textContent = "❌ त्रुटी: " + data.message;
+        function checkBothFiles() {
+            const msgWin = document.getElementById('msgWindow');
+            if (parsedRetailerRows && parsedWholesalerRows) {
                 uploadBtn.disabled = false;
+                msgWin.textContent = "दोन्ही फाईल्स यशस्वीरित्या वाचल्या. आता डेटा अपलोड करा.";
+                msgWin.className = "message success-msg";
+            } else {
+                uploadBtn.disabled = true;
+                msgWin.textContent = "";
+                msgWin.className = "message";
             }
-        })
-        .catch(error => {
-            uploadBtn.disabled = false;
-            msgWin.className = "message error-msg";
-            msgWin.textContent = "❌ नेटवर्क त्रुटी. सर्व्हरशी संपर्क होऊ शकला नाही.";
+        }
+
+        retailerInput.addEventListener('change', function(e) {
+            if(e.target.files[0]) processExcelFile(e.target.files[0], 'retailer', document.getElementById('retailerStatus'));
+        });
+
+        wholesalerInput.addEventListener('change', function(e) {
+            if(e.target.files[0]) processExcelFile(e.target.files[0], 'wholesaler', document.getElementById('wholesalerStatus'));
+        });
+
+        uploadBtn.addEventListener('click', function() {
+            if (!parsedRetailerRows || !parsedWholesalerRows) return;
+
+            const msgWin = document.getElementById('msgWindow');
+            msgWin.className = "message success-msg";
+            msgWin.textContent = "प्रक्रिया सुरू आहे... डेटा अपडेट होत आहे, कृपया थांबा.";
+            
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'अपलोड होत आहे...';
+
+            const payload = {
+                action: 'uploadAllStock',
+                retailerRows: parsedRetailerRows,
+                wholesalerRows: parsedWholesalerRows
+            };
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json()) 
+            .then(data => {
+                uploadBtn.textContent = "दोन्ही फाईल्स अपलोड करा";
+                if (data.success) {
+                    msgWin.className = "message success-msg";
+                    msgWin.textContent = "✅ " + data.message;
+                    
+                    parsedRetailerRows = null;
+                    parsedWholesalerRows = null;
+                    retailerInput.value = "";
+                    wholesalerInput.value = "";
+                    document.getElementById('retailerStatus').textContent = "फाईल निवडलेली नाही";
+                    document.getElementById('retailerStatus').className = "file-status";
+                    document.getElementById('wholesalerStatus').textContent = "फाईल निवडलेली नाही";
+                    document.getElementById('wholesalerStatus').className = "file-status";
+                } else {
+                    msgWin.className = "message error-msg";
+                    msgWin.textContent = "❌ त्रुटी: " + data.message;
+                    uploadBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                uploadBtn.textContent = "दोन्ही फाईल्स अपलोड करा";
+                uploadBtn.disabled = false;
+                msgWin.className = "message error-msg";
+                msgWin.textContent = "❌ नेटवर्क त्रुटी. सर्व्हरशी संपर्क होऊ शकला नाही.";
+            });
         });
     });
 </script>
